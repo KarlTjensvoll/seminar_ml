@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 
-from sklearn.utils import shuffle
+# from sklearn.utils import shuffle
 
 # Loop over all raw files.
 # Use only those that end with .txt, as these are clean.
