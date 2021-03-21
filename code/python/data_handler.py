@@ -1,8 +1,8 @@
 import os
 import pandas as pd
-from sklearn import model_selection as skm
+from sklearn import model_selection as selection
 from sklearn.experimental import enable_iterative_imputer
-import sklearn.impute as ski
+from sklearn import impute
 
 
 def load_data(year: int, path='../../data', **kwargs) -> tuple:
@@ -31,7 +31,9 @@ def load_data(year: int, path='../../data', **kwargs) -> tuple:
     y_train = pd.read_csv(train_path + y, sep, **kwargs)
     x_test = pd.read_csv(test_path + x, sep, **kwargs)
     y_test = pd.read_csv(test_path + y, sep, **kwargs)
-    return x_train, x_test, y_train, y_test
+    
+    # Squeeze turns vectors from DataFrame to Series.
+    return x_train, x_test, y_train.squeeze(), y_test.squeeze()
 
 
 def split_train_validate(x:pd.DataFrame, y:pd.DataFrame, seed=42) -> tuple:
@@ -39,7 +41,7 @@ def split_train_validate(x:pd.DataFrame, y:pd.DataFrame, seed=42) -> tuple:
     if x.shape[0] < test_threshold:
         raise ValueError(f'Warning, frame has less than {test_threshold} rows, are you trying to split a test sample, instead of train sample?')
     else:
-        return skm.train_test_split(
+        return selection.train_test_split(
             x,
             y,
             test_size=0.2,
@@ -50,7 +52,7 @@ def split_train_validate(x:pd.DataFrame, y:pd.DataFrame, seed=42) -> tuple:
 
 
 def impute_frame(x:pd.DataFrame, random_state=42, **kwargs) -> pd.DataFrame:
-    imputer = ski.IterativeImputer(random_state=random_state, **kwargs)
+    imputer = impute.IterativeImputer(random_state=random_state, **kwargs)
     imputer.fit(x)
     return imputer.transform(x)
 
