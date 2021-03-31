@@ -51,9 +51,23 @@ def split_train_validate(x:pd.DataFrame, y:pd.DataFrame, seed=42) -> tuple:
         )
 
 
-def impute_frame(x:pd.DataFrame, random_state=42, **kwargs) -> pd.DataFrame:
+def impute_fit(
+        x:pd.DataFrame, random_state=42, **kwargs
+    ) -> object:
     imputer = impute.IterativeImputer(random_state=random_state, **kwargs)
-    imputer.fit(x)
+    # imputer = impute.SimpleImputer(strategy=strategy, **kwargs)
+    return imputer.fit(x)
+
+def impute_transform(
+        imputer: object, x: pd.DataFrame
+    ) -> pd.DataFrame:
     return imputer.transform(x)
 
-
+def impute_fit_transform(
+        train: pd.DataFrame, test: pd.DataFrame, random_state=42, **kwargs
+    ) -> tuple:
+    imputer = impute.IterativeImputer(random_state=random_state, **kwargs)
+    imputer = imputer.fit(train)
+    train = imputer.transform(train)
+    test = imputer.transform(test)
+    return train, test

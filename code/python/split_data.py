@@ -10,7 +10,8 @@ import data_handler
 # Use only those that end with .txt, as these are clean.
 # Load them into a dataframe, and then split into test and train set.
 def split_data(
-    raw_path: str, train_path: str, test_path: str, seed: int
+        raw_path: str, train_path: str, test_path: str, 
+        seed: int, max_iter=100, add_indicator=False
     ) -> None:
     """Loop over all the files in raw_path that ends with .txt. Then split it
     into train and test data sets, with 20% of data split into train. Then
@@ -50,9 +51,13 @@ def split_data(
             
             # Impute missing. We do this seperately, so that no information
             # from train data spills over to test data.
-            max_iter = 15
-            add_indicator = False
+            print(f"Imputing train for {file}.")
+            x_train, x_test = data_handler.impute_fit_transform(
+                x_train, x_test, max_iter=max_iter, add_indicator=add_indicator
+            )
+            print("Finished imputing on all data sets.")
             
+            """
             print(f"Imputing train for {file}.")
             x_train = data_handler.impute_frame(
                 x_train, max_iter=max_iter, add_indicator=add_indicator
@@ -61,12 +66,18 @@ def split_data(
             x_test = data_handler.impute_frame(
                 x_test, max_iter=max_iter, add_indicator=add_indicator
             )
+            """
             
             # Not very efficient, but the imputer transforms DataFrame to
             # array, so we transform it back to DataFrame
             x_train = pd.DataFrame(x_train)
             x_test = pd.DataFrame(x_test)
             
+            data_to_save = [[x_train, y_train], [x_test, y_test]]
+            paths = [train_path, test_path]
+            save_files(data_to_save, paths, file)
+            
+            """
             save_x_train = os.path.join(train_path, 'x_' + file)
             save_y_train = os.path.join(train_path, 'y_' + file)
             x_train.to_csv(save_x_train, index=False)
@@ -75,6 +86,21 @@ def split_data(
             save_y_test = os.path.join(test_path, 'y_' + file)
             x_test.to_csv(save_x_test, index=False)
             y_test.to_csv(save_y_test, index=False)
+            """
+            
+            
+def save_file(x, y, file_name, path) -> None:
+    save_x = os.path.join(train_path, 'x_' + file_name)
+    save_y = os.path.join(train_path, 'y_' + file_name)
+    x.to_csv(save_x, index=False)
+    y.to_csv(save_y, index=False)
+    
+def save_files(data_list, paths, file_name, prefixes=('x_', 'y_')) -> None:
+    for i, path in enumerate(paths):
+        save_paths = [
+            os.path.join(path, prefix + file_name) for prefix in prefixes
+        ]
+        [data.to_csv(save_paths[i], index=False) for i, data in enumerate(data_list[i])]
 
 
 # Seed is taken from random.org
@@ -83,4 +109,4 @@ raw_path = '../../data/raw_do_not_touch'
 train_path = '../../data/train'
 test_path = '../../data/test'
 
-split_data(raw_path, train_path, test_path, seed)
+split_data(raw_path, train_path, test_path, seed, max_iter=1)
