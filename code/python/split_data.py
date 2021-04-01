@@ -1,4 +1,4 @@
-from sklearn import model_selection as skm
+from sklearn import model_selection
 import numpy as np
 import pandas as pd
 import os
@@ -10,7 +10,8 @@ import data_handler
 # Use only those that end with .txt, as these are clean.
 # Load them into a dataframe, and then split into test and train set.
 def split_data(
-    raw_path: str, train_path: str, test_path: str, seed: int
+        raw_path: str, train_path: str, test_path: str, 
+        seed: int, max_iter=100, add_indicator=False
     ) -> None:
     """Loop over all the files in raw_path that ends with .txt. Then split it
     into train and test data sets, with 20% of data split into train. Then
@@ -36,7 +37,7 @@ def split_data(
 
             # We stratify on y, to make sure that we have proportionally
             # the same amount of bankrupt firm in train and test.
-            x_train, x_test, y_train, y_test = skm.train_test_split(
+            x_train, x_test, y_train, y_test = model_selection.train_test_split(
                 x, 
                 y, 
                 test_size=0.2, 
@@ -50,31 +51,15 @@ def split_data(
             
             # Impute missing. We do this seperately, so that no information
             # from train data spills over to test data.
-            max_iter = 15
-            add_indicator = False
-            
             print(f"Imputing train for {file}.")
-            x_train = data_handler.impute_frame(
-                x_train, max_iter=max_iter, add_indicator=add_indicator
-            )
-            print(f"Imputing test for {file}.")
-            x_test = data_handler.impute_frame(
-                x_test, max_iter=max_iter, add_indicator=add_indicator
+            x_train, x_test = data_handler.data_pipeline(
+                x_train, x_test, max_iter=max_iter, add_indicator=add_indicator
             )
             
-            # Not very efficient, but the imputer transforms DataFrame to
-            # array, so we transform it back to DataFrame
-            x_train = pd.DataFrame(x_train)
-            x_test = pd.DataFrame(x_test)
-            
-            save_x_train = os.path.join(train_path, 'x_' + file)
-            save_y_train = os.path.join(train_path, 'y_' + file)
-            x_train.to_csv(save_x_train, index=False)
-            y_train.to_csv(save_y_train, index=False)
-            save_x_test = os.path.join(test_path, 'x_' + file)
-            save_y_test = os.path.join(test_path, 'y_' + file)
-            x_test.to_csv(save_x_test, index=False)
-            y_test.to_csv(save_y_test, index=False)
+            data_to_save = [[x_train, y_train], [x_test, y_test]]
+            paths = [train_path, test_path]
+            data_handler.save_files(data_to_save, paths, file)
+    
 
 
 # Seed is taken from random.org

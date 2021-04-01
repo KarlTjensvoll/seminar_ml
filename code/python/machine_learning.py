@@ -2,36 +2,41 @@ import pandas as pd
 import numpy as np
 
 from sklearn import linear_model as linear
-from sklearn import model_selection as selection
-from sklearn import metrics as metrics
+from sklearn import model_selection
+from sklearn import metrics 
 
 from tabulate import tabulate
 
 
 def validate_model(
         func, 
-        x:pd.DataFrame, 
-        y:pd.DataFrame, 
+        train: tuple,
+        test: tuple,
         folds=10, 
         shuffle=True, 
         seed=42, 
         **kwargs
     ) -> tuple:
     test_threshold = 4000
-    if x.shape[0] < test_threshold:
-        raise ValueError(f'Warning, frame has less than {test_threshold} rows, are you trying to split a test sample, instead of train sample?')
+    if train[0].shape[0] < test_threshold:
+        raise ValueError(f'Warning, frame has less than {test_threshold} rows, are you trying to train on a test sample?')
+
+    # Unpack variables
+    x_train, y_train = train
+    x_test, y_test = test
 
     # Use stratified cross-validation to get the best fitted model.
     # We then find which estimator that performed the best and keep the results from that only.
-    val_result = selection.cross_validate(
-        func, x, y, cv=folds, return_estimator=True, **kwargs
+    val_result = model_selection.cross_validate(
+        func, x_train, y_train, cv=folds, 
+        return_estimator=True, scoring='f1', **kwargs
     )
     best_fold = np.argmax(val_result.get('test_score'))
     results = {item: array[best_fold] for item, array in val_result.items()}
 
     # Create confusion matrix
-    predicted = results.get('estimator').predict(x)
-    confusion_mat = metrics.confusion_matrix(y, predicted).tolist()
+    predicted = results.get('estimator').predict(x_test)
+    confusion_mat = metrics.confusion_matrix(y_test, predicted).tolist()
 
     # Print confusion matrix
     confusion_mat[0].insert(0, "Non-Bankrupt")
