@@ -1,18 +1,33 @@
+from typing import Callable
 import pandas as pd
 import numpy as np
 
 from sklearn import linear_model as linear
 from sklearn import model_selection
 from sklearn import metrics 
+from sklearn.utils.testing import ignore_warnings
+from sklearn.exceptions import ConvergenceWarning
 
 from tabulate import tabulate
 
 
+@ignore_warnings(category=ConvergenceWarning)
+def search_hyperparameters(
+        func: Callable, param_grid: dict, train, folds=5
+    ) -> tuple:
+    x_train, y_train = train
+    grid_search = model_selection.GridSearchCV(
+        func, param_grid, cv=folds)
+    grid_results = grid_search.fit(x_train, y_train)
+    return grid_results
+
+
+@ignore_warnings(category=ConvergenceWarning)
 def validate_model(
-        func, 
+        func: Callable, 
         train: tuple,
         test: tuple,
-        folds=10, 
+        folds=5, 
         shuffle=True, 
         seed=42, 
         **kwargs
@@ -29,9 +44,9 @@ def validate_model(
     # We then find which estimator that performed the best and keep the results from that only.
     val_result = model_selection.cross_validate(
         func, x_train, y_train, cv=folds, 
-        return_estimator=True, scoring='f1', **kwargs
+        return_estimator=True, scoring='recall', **kwargs
     )
-    best_fold = np.argmax(val_result.get('test_score'))
+    best_fold = np.argmax(val_result.get('test_recall'))
     results = {item: array[best_fold] for item, array in val_result.items()}
 
     # Create confusion matrix
