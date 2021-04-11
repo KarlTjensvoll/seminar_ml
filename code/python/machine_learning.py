@@ -1,23 +1,113 @@
 from typing import Callable
+from typing import Union
 import pandas as pd
 import numpy as np
+from matplotlib import pyplot as plt
 
 from sklearn import linear_model as linear
 from sklearn import model_selection
-from sklearn import metrics 
+from sklearn import metrics
 from sklearn.utils.testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
 
 from tabulate import tabulate
 
+def grid_cv_report(
+        gcv_results: object, x_test:np.array, y_test:np.array
+    ) -> None:
+    """Summarizes statistics from the cross validated grid search, and passes 
+    them through functions to print the summary statistics.
+
+    Args:
+        gcv_results (Callable): The estimator (along with all the details from
+        each loop), that maximises the givens score.
+        table (list): Listlike object that is passed to the tabulate function.
+        x_test (np.array): Test features.
+        y_test (np.array): Test labels.
+    """
+    # Gather summary staticits into numpy arrays, and calculate confidence bands.
+    means = np.array(gcv_results.cv_results_['mean_test_score'].data, dtype='float')
+    std = np.array(gcv_results.cv_results_['std_test_score'].data, dtype='float')
+    cf_5 = means - 1.96*std
+    cf_95 = means + 1.96*std
+    
+    # Get the parameter names, and then gather everything into a format
+    # that can be passed to the tabulate function.
+    params = gcv_results.cv_results_['params']
+    if len(params) > 100:
+        table = ['Too many combinations to print']
+    else:
+        table = zip(params, means, cf_5, cf_95)
+    
+    print_gvc_table(gcv_results, table, x_test, y_test)
+    
+    
+def print_gvc_table(
+        gcv_results: Callable, 
+        table: Union[list, dict], 
+        x_test: np.array, 
+        y_test: np.array
+    ) -> None:
+    """Prints the summary statistics from the cross validated grid search. It
+    will print the mean, score upper and lower confidence levels, along with 
+    the  set of hyperparameters that gave the specific score. Also print a roc
+    curve at the end. 
+
+    Args:
+        gcv_results (Callable): The estimator (along with all the details from
+        each loop), that maximises the givens score.
+        table (list): Listlike object that is passed to the tabulate function.
+        x_test (np.array): Test features.
+        y_test (np.array): Test labels.
+    """
+    headers = ['Specification', 'mean score', 'cf - 5%', 'cf - 95%']
+    print(f'Machine learning estimator: {gcv_results.estimator}')
+    print()
+    print(tabulate(table, headers=headers, floatfmt='.3f'))
+    print()
+    print()
+    print(f'Best specification at {gcv_results.best_params_}:')
+    print()
+    print(metrics.classification_report(
+        y_test, gcv_results.predict(x_test), digits=3)
+    )
+    print()
+    plot_gvc_roc(gcv_results, x_test, y_test)
+    
+    
+def plot_gvc_roc(
+        gcv_results: Callable, x_test: np.array, y_test: np.array
+    ) -> None:
+    """Takes the result of the cross validated grid search,
+    and plots it in a ROC curve.
+
+    Args:
+        gcv_results (Callable): The estimator to pass to the plot_roc_curve function.
+        x_test (np.array): Test features.
+        y_test (np.array): Test labels.
+    """
+    metrics.plot_roc_curve(gcv_results, x_test, y_test)
+    
+    # Also plot a 45-degree line, and adjust the x/y-limit to make it look pretty.
+    plt.plot((0, 1), (0, 1), ls='--', c='k')
+    plt.xlim([-0.01, 1.01])
+    plt.ylim([-0.0, 1.05])
+    plt.show()
+
 
 @ignore_warnings(category=ConvergenceWarning)
 def search_hyperparameters(
-        func: Callable, param_grid: dict, train, folds=5
+        func: Callable, 
+        param_grid: dict, 
+        train, 
+        scoring: Union[str, dict], 
+        refit: str,
+        folds=5
     ) -> tuple:
     x_train, y_train = train
     grid_search = model_selection.GridSearchCV(
-        func, param_grid, cv=folds)
+        func, param_grid, cv=folds, scoring=scoring, refit=refit
+    )
     grid_results = grid_search.fit(x_train, y_train)
     return grid_results
 
