@@ -38,7 +38,23 @@ def load_data(year: int, path='../../data', **kwargs) -> tuple:
     return x_train, x_test, y_train.squeeze(), y_test.squeeze()
 
 
+# Not in use anymore. Now using the CV functions supplied by sklearn.
 def split_train_validate(x:pd.DataFrame, y:pd.DataFrame, seed=42) -> tuple:
+    """Split two data sets, one with features and one with labels, into
+    train and validate datasets.
+
+    Args:
+        x (pd.DataFrame): Data containing features.
+        y (pd.DataFrame): Data containing labels
+        seed (int, optional): Seed used to shuffle data before split. Defaults to 42.
+
+    Raises:
+        ValueError: Check to make sure that test sample is not being used for
+        training and validation.
+
+    Returns:
+        tuple: Returns train and validation data.
+    """
     test_threshold = 4000
     if x.shape[0] < test_threshold:
         raise ValueError(f'Warning, frame has less than {test_threshold} rows, are you trying to split a test sample, instead of train sample?')
@@ -52,9 +68,22 @@ def split_train_validate(x:pd.DataFrame, y:pd.DataFrame, seed=42) -> tuple:
             stratify=y
         )
 
+
+
 def data_pipeline(
         train: pd.DataFrame, test: pd.DataFrame, random_state=42, **kwargs
     ) -> tuple:
+    """Fits a transformer pipeline on the train data, then transform both the 
+    train and test data. This makes sure that the test data is not contaminated.
+
+    Args:
+        train (pd.DataFrame): Train data.
+        test (pd.DataFrame): Test data, never to be inspected.
+        random_state (int, optional): Not in use. Defaults to 42.
+
+    Returns:
+        tuple: Returns the transformed train and test data.
+    """
     transformer_pipeline = make_pipeline(
         impute.IterativeImputer(random_state=random_state, **kwargs),
         StandardScaler()
@@ -65,6 +94,7 @@ def data_pipeline(
     return train, test
     
 
+# Not in use anymore, now using the pipeline.
 def impute_fit_transform(
         train: pd.DataFrame, test: pd.DataFrame, random_state=42, **kwargs
     ) -> tuple:
@@ -84,6 +114,7 @@ def impute_fit_transform(
     train = pd.DataFrame(imputer.transform(train))
     test = pd.DataFrame(imputer.transform(test))
     return train, test
+
 
 def save_files(
         data_list: list, 
