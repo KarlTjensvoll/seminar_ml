@@ -1,5 +1,7 @@
 import os
 import pandas as pd
+import numpy as np
+
 from sklearn import impute
 from sklearn import model_selection
 from sklearn.experimental import enable_iterative_imputer
@@ -7,13 +9,16 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 
-def load_data(year: int, path='../../data', **kwargs) -> tuple:
+def load_data(year: int, path='../../data', out_frame = True, **kwargs) -> tuple:
     """Loads x and y for the given year.
 
     Args:
         year (int): What year to load.
         path (str, optional): Relative or absolute path to folder that has the
         train folder. Defaults to '../../data'.
+        out_frame (Bool): Specifies if output should be in a DataFrame, 
+        otherwise returns as a Fortran array. Should only be used with sklearn
+        methods, but should be a little faster than using frames with sklearn.
 
     Raises:
         ValueError: If you do not give a valid year.
@@ -35,7 +40,14 @@ def load_data(year: int, path='../../data', **kwargs) -> tuple:
     y_test = pd.read_csv(test_path + y, sep, **kwargs)
     
     # Squeeze turns vectors from DataFrame to Series.
-    return x_train, x_test, y_train.squeeze(), y_test.squeeze()
+    if out_frame:
+        return x_train, x_test, y_train.squeeze(), y_test.squeeze()
+    else:
+        return tuple(
+            np.asfortranarray(data_set.to_numpy()) 
+            for data_set in 
+            [x_train, x_test, y_train.squeeze(), y_test.squeeze()]
+        )
 
 
 # Not in use anymore. Now using the CV functions supplied by sklearn.
