@@ -93,8 +93,8 @@ def plot_gvc_roc(
     plt.xlim([-0.01, 1.01])
     plt.ylim([-0.0, 1.05])
     plt.show()
-
-
+    
+    
 @ignore_warnings(category=ConvergenceWarning)
 def search_hyperparameters(
         func: Callable, 
@@ -114,6 +114,91 @@ def search_hyperparameters(
 
 @ignore_warnings(category=ConvergenceWarning)
 def validate_model(
+        gcv_results: Callable, 
+        train: tuple,
+        test: tuple,
+        folds=5, 
+        shuffle=True, 
+        seed=42, 
+        **kwargs
+    ) -> tuple:
+    # Unpack variables
+    x_train, y_train = train
+    x_test, y_test = test
+    
+    test_threshold = 4000
+    if x_train.shape[0] < test_threshold:
+        raise ValueError(f'Warning, frame has less than {test_threshold} rows, are you trying to train on a test sample?')
+    
+    # Get the best estimator from the gridsearchcv.
+    func = gcv_results.best_estimator_
+
+    # Use stratified cross-validation to get the best fitted model.
+    # We then find which estimator that performed the best and keep the results from that only.
+    val_result = model_selection.cross_validate(
+        func, x_train, y_train, cv=folds, 
+        return_estimator=True, scoring='recall', return_train_score=True,
+        **kwargs
+    )
+    best_fold = np.argmax(val_result.get('test_recall'))
+    results = {item: array[best_fold] for item, array in val_result.items()}
+
+    print_confusion_matrix(results, x_test, y_test)
+    return results
+
+
+def print_confusion_matrix(
+        results: object, x_test: np.array, y_test: np.array
+    ) -> None:
+    # Create confusion matrix
+    predicted = results.get('estimator').predict(x_test)
+    confusion_mat = metrics.confusion_matrix(y_test, predicted).tolist()
+
+    # Print confusion matrix
+    confusion_mat[0].insert(0, "Non-Bankrupt")
+    confusion_mat[1].insert(0, "Bankrupt")
+    estimator_type = type(results.get('estimator')).__name__
+    test_score = results.get('test_score')
+    train_score = results.get('train_score')
+    headers = ["", "Non-Bankrupt", "Bankrupt"]
+    print(f"Confusion matrix from a {estimator_type}, with test-score of {test_score:.3f} and train-score of {train_score:.3f} ")  # Title
+    print()
+    print(tabulate(confusion_mat, headers=headers))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def print_confusion_matrix_old(gcv_results, x_test, y_test):
+    predicted = gcv_results.best_estimator_.predict(x_test)
+    confusion_mat = metrics.confusion_matrix(y_test, predicted).tolist()
+
+    # Print confusion matrix
+    confusion_mat[0].insert(0, "Non-Bankrupt")
+    confusion_mat[1].insert(0, "Bankrupt")
+    estimator_type = gcv_results.scoring
+    test_score = gcv_results.best_score_
+    headers = ["", "Non-Bankrupt", "Bankrupt"]
+    print(f"Confusion matrix from a {estimator_type}, with test-score of {test_score:.3f}")  # Title
+    print()
+    print(tabulate(confusion_mat, headers=headers))
+
+
+@ignore_warnings(category=ConvergenceWarning)
+def validate_model_old(
         func: Callable, 
         train: tuple,
         test: tuple,
