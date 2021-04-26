@@ -7,7 +7,12 @@ from matplotlib import pyplot as plt
 from sklearn import linear_model as linear
 from sklearn import model_selection
 from sklearn import metrics
-from sklearn.utils.testing import ignore_warnings
+# solving deprecation problems for later versions of sklearn
+try:
+    from sklearn.utils._testing import ignore_warnings
+except ImportError:
+    from sklearn.utils.testing import ignore_warnings
+    
 from sklearn.exceptions import ConvergenceWarning
 
 from tabulate import tabulate
