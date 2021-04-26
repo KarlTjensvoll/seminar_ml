@@ -17,6 +17,7 @@ from sklearn.exceptions import ConvergenceWarning
 
 from tabulate import tabulate
 
+
 def grid_cv_report(
         gcv_results: object, x_test:np.array, y_test:np.array
     ) -> None:
