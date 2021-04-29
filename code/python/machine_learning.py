@@ -108,11 +108,12 @@ def search_hyperparameters(
         train, 
         scoring: Union[str, dict], 
         refit: str,
-        folds=5
+        folds=5,
+        **kwargs
     ) -> tuple:
     x_train, y_train = train
     grid_search = model_selection.GridSearchCV(
-        func, param_grid, cv=folds, scoring=scoring, refit=refit
+        func, param_grid, cv=folds, scoring=scoring, refit=refit, **kwargs
     )
     grid_results = grid_search.fit(x_train, y_train)
     return grid_results
