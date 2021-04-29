@@ -127,6 +127,7 @@ def validate_model(
         folds=5, 
         shuffle=True, 
         seed=42, 
+        supress_print=False,
         **kwargs
     ) -> tuple:
     # Unpack variables
@@ -150,7 +151,8 @@ def validate_model(
     best_fold = np.argmax(val_result.get('test_recall'))
     results = {item: array[best_fold] for item, array in val_result.items()}
 
-    print_confusion_matrix(results, x_test, y_test)
+    if not supress_print:
+        print_confusion_matrix(results, x_test, y_test)
     return results
 
 
