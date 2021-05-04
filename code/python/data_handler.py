@@ -81,7 +81,6 @@ def split_train_validate(x:pd.DataFrame, y:pd.DataFrame, seed=42) -> tuple:
         )
 
 
-
 def data_pipeline(
         train: pd.DataFrame, test: pd.DataFrame, random_state=42, **kwargs
     ) -> tuple:
@@ -103,28 +102,6 @@ def data_pipeline(
     # transformer_pipeline.fit(train)
     train = pd.DataFrame(transformer_pipeline.fit_transform(train))
     test = pd.DataFrame(transformer_pipeline.transform(test))
-    return train, test
-    
-
-# Not in use anymore, now using the pipeline.
-def impute_fit_transform(
-        train: pd.DataFrame, test: pd.DataFrame, random_state=42, **kwargs
-    ) -> tuple:
-    """Fits imputing on the train data, and then fits this both on the train
-    and test data.
-
-    Args:
-        train (pd.DataFrame): Train data to be fitted and transformed
-        test (pd.DataFrame): Test data to be transformed
-        random_state (int, optional): Defaults to 42.
-
-    Returns:
-        tuple: [description]
-    """
-    imputer = impute.IterativeImputer(random_state=random_state, **kwargs)
-    imputer = imputer.fit(train)
-    train = pd.DataFrame(imputer.transform(train))
-    test = pd.DataFrame(imputer.transform(test))
     return train, test
 
 
@@ -148,8 +125,8 @@ def save_files(
             os.path.join(path, prefix + file_name) for prefix in prefixes
         ]
         [data.to_csv(save_paths[i], index=False) for i, data in enumerate(data_list[i])]
-        
-        
+
+
 def ohlson_varnames():
     return [
         'net profit / total assets',
@@ -217,3 +194,26 @@ def ohlson_varnames():
         'sales / short-term liabilities',
         'sales / fixed assets'
     ]
+    
+    
+    
+# Not in use anymore, now using the pipeline.
+def impute_fit_transform(
+        train: pd.DataFrame, test: pd.DataFrame, random_state=42, **kwargs
+    ) -> tuple:
+    """Fits imputing on the train data, and then fits this both on the train
+    and test data.
+
+    Args:
+        train (pd.DataFrame): Train data to be fitted and transformed
+        test (pd.DataFrame): Test data to be transformed
+        random_state (int, optional): Defaults to 42.
+
+    Returns:
+        tuple: [description]
+    """
+    imputer = impute.IterativeImputer(random_state=random_state, **kwargs)
+    imputer = imputer.fit(train)
+    train = pd.DataFrame(imputer.transform(train))
+    test = pd.DataFrame(imputer.transform(test))
+    return train, test

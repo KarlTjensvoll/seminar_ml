@@ -26,7 +26,7 @@ def cost_benefit_analysis(model, data):
     save_low = predicted_assets * 0.12
     save_high = predicted_assets * 0.2
 
-    return bankrupt_assets, save_low, save_high
+    return bankrupt_assets, save_low, save_high, idx_true.sum()
 
 
 def firm_assets(x, idx):

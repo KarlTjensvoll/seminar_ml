@@ -128,6 +128,7 @@ def validate_model(
         shuffle=True, 
         seed=42, 
         supress_print=False,
+        scoring='recall',
         **kwargs
     ) -> tuple:
     # Unpack variables
@@ -145,7 +146,7 @@ def validate_model(
     # We then find which estimator that performed the best and keep the results from that only.
     val_result = model_selection.cross_validate(
         func, x_train, y_train, cv=folds, 
-        return_estimator=True, scoring='recall', return_train_score=True,
+        return_estimator=True, scoring=scoring, return_train_score=True,
         **kwargs
     )
     best_fold = np.argmax(val_result.get('test_recall'))
