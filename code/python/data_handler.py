@@ -7,6 +7,7 @@ from sklearn import model_selection
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
+from scipy import stats
 
 
 def load_data(year: int, path='../../data', out_frame = True, **kwargs) -> tuple:
@@ -96,8 +97,10 @@ def data_pipeline(
         tuple: Returns the transformed train and test data.
     """
     transformer_pipeline = make_pipeline(
+        # remove_outliers(),
         impute.IterativeImputer(random_state=random_state, **kwargs),
-        StandardScaler()
+        StandardScaler(),
+        
     )
     # transformer_pipeline.fit(train)
     train = pd.DataFrame(transformer_pipeline.fit_transform(train))
@@ -195,7 +198,32 @@ def ohlson_varnames():
         'sales / fixed assets'
     ]
     
+
+class remove_outliers():
+    def __init__(self, std=2):
+        self.std = std
+
     
+    def fit(self, X, y):
+        col_std = []
+        for col in range(X.shape[1]):
+            col_std.append(np.nanstd(X[:, col]))
+        self.col_std = col_std
+        return self
+    
+
+    def transform(self, X):
+        X_new = X.copy()
+        for col in range(X_new.shape[1]):
+            # Don't transform it if it might already be normal distributed.
+            if stats.normaltest(X_new[:, col], nan_policy='omit')[1] == 0.0:
+                std_threshold = self.std * self.col_std[col]
+                large_val = abs(X_new[:, col]) > std_threshold
+                X_new[large_val, col] = np.nan
+                #X_new[:, col] = np.minimum(X_new[:, col], std_threshold)
+                #X_new[:, col] = np.maximum(X_new[:, col], -std_threshold)
+        return X_new
+
     
 # Not in use anymore, now using the pipeline.
 def impute_fit_transform(

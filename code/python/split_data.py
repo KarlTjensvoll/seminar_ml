@@ -34,6 +34,8 @@ def split_data(
             assert df.shape[1] == 65
             x = df.iloc[:, :-1]
             y = df.iloc[:, -1]
+            
+            x = x.to_numpy()
 
             # We stratify on y, to make sure that we have proportionally
             # the same amount of bankrupt firm in train and test.
@@ -55,6 +57,8 @@ def split_data(
             x_train, x_test = data_handler.data_pipeline(
                 x_train, x_test, max_iter=max_iter, add_indicator=add_indicator
             )
+            x_train = pd.DataFrame(x_train)
+            x_test = pd.DataFrame(x_test)
             
             data_to_save = [[x_train, y_train], [x_test, y_test]]
             paths = [train_path, test_path]

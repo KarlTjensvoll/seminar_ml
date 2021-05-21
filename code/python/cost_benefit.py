@@ -22,7 +22,7 @@ def latex_printout(model, data, name, table_notes=''):
     conf_mat = metrics.confusion_matrix(y_test, y_pred).tolist()
     conf_pct = [[round(i / sum(col), 3) for i in col] for col in conf_mat]
     insert_headers(conf_mat)
-    latex_table(conf_mat, conf_pct, f"Test Results with area under the curve score of {model['train_score']:.3f}")
+    latex_table(conf_mat, conf_pct, f"Test Results with area under the curve score of {model['test_score']:.3f}")
     
     print('\\medskip')
     print()
