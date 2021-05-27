@@ -98,6 +98,7 @@ def data_pipeline(
     """
     transformer_pipeline = make_pipeline(
         # remove_outliers(),
+        # impute.SimpleImputer(add_indicator=False),
         impute.IterativeImputer(random_state=random_state, **kwargs),
         StandardScaler(),
         
@@ -224,7 +225,35 @@ class remove_outliers():
                 #X_new[:, col] = np.maximum(X_new[:, col], -std_threshold)
         return X_new
 
+
+def ohlson_data(year):
+    x_train, x_test, y_train, y_test = load_data(year)
+    n = y_train.size
+    x_train.columns = ohlson_varnames()
+    x_test.columns = ohlson_varnames()
+
+    # Ohlson use a dummy if liabilites are greater than assets
+    x_train['liabilites > assets'] = (x_train['total liabilities / total assets'] > 1)*1.0
+    x_test['liabilites > assets'] = (x_test['total liabilities / total assets'] > 1)*1.0
+
+    # Try to replicate the variables as closely as possible,
+    # some of the variables are inverted, but that should not affect
+    # the predictability, only the sign of the coefficient.
+    ohlson_vars = [
+        'logarithm of total assets', 
+        'total liabilities / total assets', 
+        'working capital / total assets', 
+        'current assets / short-term liabilities',
+        'liabilites > assets',
+        'net profit / total assets',
+        'total liabilities / ((profit on operating activities + depreciation) * (12/365))',
+        'sales (n) / sales (n-1)'
+    ]
+    x_ohlson_train = x_train[ohlson_vars]
+    x_ohlson_test = x_test[ohlson_vars]
+    return x_ohlson_train, x_ohlson_test, y_train, y_test
     
+
 # Not in use anymore, now using the pipeline.
 def impute_fit_transform(
         train: pd.DataFrame, test: pd.DataFrame, random_state=42, **kwargs
